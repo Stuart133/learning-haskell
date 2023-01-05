@@ -1,5 +1,8 @@
 module Chap4 where
 
+import Data.Char
+import Data.Foldable
+
 angleVectors :: (Float, Float) -> (Float, Float) -> Float
 angleVectors a b = acos phi
   where
@@ -31,3 +34,15 @@ inRange lower upper xs =
 countPositives :: [Int] -> Int
 countPositives xs =
   length [x | x <- xs, x >= 0]
+
+multDigits :: String -> Int
+multDigits str =
+  product [digitToInt x | x <- str, isDigit x]
+
+capitalise :: String -> String
+capitalise (head : tail) = toUpper head : [toLower char | char <- tail]
+capitalise [] = []
+
+crosswordFind :: Char -> Int -> Int -> [String] -> [String]
+crosswordFind letter pos len words =
+  [word | word <- words, length word == len, word !! pos == letter]
