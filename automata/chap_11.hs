@@ -1,7 +1,5 @@
 module Chap11 where
 
-import Distribution.ModuleName (main)
-
 prodFromTo :: Int -> Int -> Int
 prodFromTo m n
   | m > n = 1
@@ -37,3 +35,21 @@ times m n = plus (times m (n - 1)) m
 power :: Int -> Int -> Int
 power m 0 = 1
 power m n = times (power m (n - 1)) m
+
+enumCountDown :: Int -> Int -> [Int]
+enumCountDown m n
+  | n < m = []
+  | n >= m = enumCountDown m (n - 1) ++ [n]
+
+countProp :: Int -> Int -> Bool
+countProp a b = enumFromTo a b == enumCountDown a b
+
+reverseTail :: [a] -> [a]
+reverseTail xs = rev xs []
+  where
+    rev :: [a] -> [a] -> [a]
+    rev [] ys = ys
+    rev (x : xs) ys = rev xs (x : ys)
+
+reverseProp :: [Int] -> Bool
+reverseProp a = reverse a == reverseTail a
