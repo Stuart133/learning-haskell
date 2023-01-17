@@ -1,5 +1,7 @@
 module Chap13 where
 
+import Data.Char
+
 sumSquareOdds :: [Int] -> Int
 sumSquareOdds = foldr ((+) . (^ 2)) 0 . filter odd
 
@@ -30,3 +32,32 @@ dropWhile' p [] = []
 dropWhile' p (x : xs)
   | p x = dropWhile' p xs
   | otherwise = x : xs
+
+words' :: String -> [String]
+words' "" = []
+words' s = takeWhile' (not . isSpace) s : words' (dropWhile' isSpace (dropWhile' (not . isSpace) s))
+
+zipWith' :: (a -> b -> c) -> [a] -> [b] -> [c]
+zipWith' f xs [] = []
+zipWith' f [] ys = []
+zipWith' f (x : xs) (y : ys) = f x y : zipWith' f xs ys
+
+zipWithMap :: (a -> b -> c) -> [a] -> [b] -> [c]
+zipWithMap f xs ys = map (uncurry f) (zip xs ys)
+
+invertUnzip :: ([a], [b]) -> [(a, b)]
+invertUnzip = uncurry zip
+
+type Church a = (a -> a) -> a -> a
+
+church :: Int -> Church a
+church = iter
+
+succ' :: Church a -> Church a
+succ' cm f x = f (cm f x)
+
+plus :: Church a -> Church a -> Church a
+plus cm cn f x = cm f (cn f x)
+
+unchurch :: Church Int -> Int
+unchurch cn = cn (+ 1) 0
