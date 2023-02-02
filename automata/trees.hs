@@ -1,11 +1,13 @@
 module Trees where
 
-import Data.List (nub)
+import Data.List (nub, sortOn)
 
 data Exp
   = Lit Int
   | Exp `Add` Exp
+  | Exp `Sub` Exp
   | Exp `Mul` Exp
+  | Exp `Div` Exp
   | If Cond Exp Exp
   deriving (Eq)
 
@@ -20,8 +22,12 @@ instance Show Exp where
     show n
   show (Add e f) =
     "(" ++ (show e ++ " + " ++ show f) ++ ")"
+  show (Sub e f) =
+    "(" ++ (show e ++ " - " ++ show f) ++ ")"
   show (Mul e f) =
     "(" ++ (show e ++ " * " ++ show f) ++ ")"
+  show (Div e f) =
+    "(" ++ (show e ++ " / " ++ show f) ++ ")"
   show (If c e f) = "if " ++ show c ++ " then " ++ show e ++ " else " ++ show f
 
 instance Show Cond where
@@ -32,7 +38,9 @@ instance Show Cond where
 evalExp :: Exp -> Int
 evalExp (Lit n) = n
 evalExp (Add e f) = evalExp e + evalExp f
+evalExp (Sub e f) = evalExp e - evalExp f
 evalExp (Mul e f) = evalExp e * evalExp f
+evalExp (Div e f) = evalExp e `div` evalExp f
 evalExp (If c e f) = if evalCond c then evalExp e else evalExp f
 
 evalCond :: Cond -> Bool
@@ -79,6 +87,12 @@ evalProp vn (Not p) = not (evalProp vn p)
 evalProp vn (p :||: q) = evalProp vn p || evalProp vn q
 evalProp vn (p :&&: q) = evalProp vn p && evalProp vn q
 
+size :: Prop -> Int
+size (Not p) = 1 + size p
+size (p :||: q) = 1 + size p + size q
+size (p :&&: q) = 1 + size p + size q
+size p = 1
+
 valn :: Valn
 valn "a" = True
 valn "b" = True
@@ -107,6 +121,15 @@ names (p :&&: q) = nub (names p ++ names q)
 
 satisfiable :: Prop -> Bool
 satisfiable p = or [evalProp vn p | vn <- valns (names p)]
+
+subExpressions :: Prop -> [Prop]
+subExpressions (Not p) = Not p : subExpressions p
+subExpressions (p :||: q) = [p :||: q] ++ subExpressions p ++ subExpressions q
+subExpressions (p :&&: q) = [p :&&: q] ++ subExpressions p ++ subExpressions q
+subExpressions x = [x]
+
+ttProp :: Valn -> Prop -> [(Prop, Bool)]
+ttProp vn p = [(p, evalProp vn p) | p <- sortOn size (nub (subExpressions p))]
 
 p0 = Var "a" :&&: Not (Var "a")
 
