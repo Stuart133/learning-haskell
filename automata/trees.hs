@@ -56,6 +56,8 @@ c0 = Lt e0 e1
 
 e2 = If c0 e0 e1
 
+data Sequent = Sequent {ante :: [Prop], post :: [Prop]} deriving (Eq, Show)
+
 type Name = String
 
 type Valn = Name -> Bool
@@ -119,14 +121,20 @@ names (Not p) = names p
 names (p :||: q) = nub (names p ++ names q)
 names (p :&&: q) = nub (names p ++ names q)
 
-satisfiable :: Prop -> Bool
-satisfiable p = or [evalProp vn p | vn <- valns (names p)]
-
 subExpressions :: Prop -> [Prop]
 subExpressions (Not p) = Not p : subExpressions p
 subExpressions (p :||: q) = [p :||: q] ++ subExpressions p ++ subExpressions q
 subExpressions (p :&&: q) = [p :&&: q] ++ subExpressions p ++ subExpressions q
 subExpressions x = [x]
+
+satisfiable :: Prop -> Bool
+satisfiable p = or [evalProp vn p | vn <- valns (names p)]
+
+tautology :: Prop -> Bool
+tautology p = and [evalProp vn p | vn <- valns (names p)]
+
+equivalent :: Prop -> Prop -> Bool
+equivalent p q = and [evalProp vn p == evalProp vn q | vn <- valns (nub (names q) ++ names p)]
 
 ttProp :: Valn -> Prop -> [(Prop, Bool)]
 ttProp vn p = [(p, evalProp vn p) | p <- sortOn size (nub (subExpressions p))]
@@ -136,3 +144,28 @@ p0 = Var "a" :&&: Not (Var "a")
 p1 = (Var "a" :&&: Var "b") :||: (Not (Var "a") :&&: Not (Var "b"))
 
 p2 = (Var "a" :&&: Not (Var "b") :&&: (Var "c" :||: (Var "d" :&&: Var "b")) :||: (Not (Var "b") :&&: Not (Var "a"))) :&&: Var "c"
+
+data Mobile
+  = Mobile `Rod` Mobile
+  | Weight Int
+  deriving (Show)
+
+weight :: Mobile -> Int
+weight (Weight w) = w
+weight (l `Rod` r) = weight l + weight r
+
+balanced :: Mobile -> Bool
+balanced (Weight w) = True
+balanced (l `Rod` r) = balanced l && balanced r && weight l == weight r
+
+instance Eq Mobile where
+  (Weight x) == (Weight y) = x == y
+  (Weight x) == l `Rod` r = False
+  l `Rod` r == (Weight x) = False
+  lx `Rod` rx == ly `Rod` ry = (lx == ly && rx == ry) || (lx == ry) && (rx == ly)
+
+a = (Weight 20 `Rod` (Weight 15 `Rod` Weight 10)) `Rod` (Weight 20 `Rod` Weight 25)
+
+b = (Weight 20 `Rod` (Weight 10 `Rod` Weight 10)) `Rod` Weight 40
+
+c = Weight 40 `Rod` (Weight 20 `Rod` (Weight 10 `Rod` Weight 10))
