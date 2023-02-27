@@ -1,6 +1,7 @@
 module DPLL where
 
-import Data.List (intercalate)
+import Data.List (delete, intercalate)
+import Trees (a)
 
 data Var = A | B | C | D | E | F | G | H
   deriving (Eq, Show)
@@ -23,6 +24,20 @@ newtype Form atom = And [Clause atom]
 
 instance Show a => Show (Form a) where
   show (And ls) = intercalate " && " (map show ls)
+
+(<<) :: Eq atom => [Clause atom] -> Literal atom -> [Clause atom]
+cs << l = [Or (delete (neg l) ls) | Or ls <- cs, l `notElem` ls]
+
+neg :: Literal atom -> Literal atom
+neg (P a) = N a
+neg (N a) = P a
+
+dpll :: Eq atom => Form atom -> [[Literal atom]]
+dpll (And []) = [[]]
+dpll (And (Or [] : cs)) = []
+dpll (And (Or (l : ls) : cs)) =
+  [l : ls | ls <- dpll (And (cs << l))]
+    ++ [neg l : ls | ls <- dpll (And (Or ls : cs << neg l))]
 
 cnf =
   And
