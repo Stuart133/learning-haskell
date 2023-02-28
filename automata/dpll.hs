@@ -11,7 +11,7 @@ data Literal atom = P atom | N atom
 
 instance Show a => Show (Literal a) where
   show (P x) = show x
-  show (N x) = "not " ++ show x
+  show (N x) = ""
 
 newtype Clause atom = Or [Literal atom]
   deriving (Eq)
@@ -86,8 +86,8 @@ rowsNoRepetition =
         j' <- [1 .. (j - 1)]
     ]
 
-columnComplete :: Form (Int, Int, Int)
-columnComplete =
+columnsComplete :: Form (Int, Int, Int)
+columnsComplete =
   And
     [ Or [P (i, j, n) | i <- [1 .. 9]]
       | j <- [1 .. 9],
@@ -104,18 +104,55 @@ columnNoRepetitions =
         i' <- [1 .. (i - 1)]
     ]
 
-squareComplete :: Form (Int, Int, Int)
-squareComplete =
-  And
-    [ Or
-        [P (i, j, n) | n <- [1 .. 9]]
-      | (i, j) <- concat macroSquares
-    ]
+squaresComplete :: Form (Int, Int, Int)
+squaresComplete =
+  And (map (\xs -> Or [P x | x <- xs]) squares)
 
-macroSquares :: [[(Int, Int)]]
-macroSquares =
-  [ [ (i, j) | i <- [((x - 1) * 3) + 1 .. x * 3], j <- [((y - 1) * 3) + 1 .. y * 3]
+squares :: [[(Int, Int, Int)]]
+squares =
+  [ [ (i, j, n) | i <- [((x - 1) * 3) + 1 .. x * 3], j <- [((y - 1) * 3) + 1 .. y * 3]
     ]
     | x <- [1 .. 3],
-      y <- [1 .. 3]
+      y <- [1 .. 3],
+      n <- [1 .. 9]
   ]
+
+(<&&>) :: Form a -> Form a -> Form a
+And xs <&&> And ys = And (xs ++ ys)
+
+sudokuProblem :: Form (Int, Int, Int)
+sudokuProblem =
+  And
+    [ Or [P (1, 2, 9)],
+      Or [P (1, 9, 2)],
+      Or [P (2, 5, 9)],
+      Or [P (2, 7, 4)],
+      Or [P (2, 8, 6)],
+      Or [P (2, 9, 3)],
+      Or [P (3, 1, 3)],
+      Or [P (3, 3, 6)],
+      Or [P (3, 6, 8)],
+      Or [P (3, 7, 1)],
+      Or [P (4, 1, 6)],
+      Or [P (4, 4, 9)],
+      Or [P (4, 7, 3)],
+      Or [P (5, 1, 9)],
+      Or [P (5, 4, 8)],
+      Or [P (5, 6, 2)],
+      Or [P (5, 9, 1)],
+      Or [P (6, 3, 2)],
+      Or [P (6, 6, 7)],
+      Or [P (6, 9, 5)],
+      Or [P (7, 3, 3)],
+      Or [P (7, 4, 5)],
+      Or [P (7, 7, 7)],
+      Or [P (7, 9, 4)],
+      Or [P (8, 1, 5)],
+      Or [P (8, 2, 1)],
+      Or [P (8, 3, 7)],
+      Or [P (8, 5, 8)],
+      Or [P (9, 1, 4)],
+      Or [P (9, 8, 1)]
+    ]
+
+soduku = allFilled <&&> noneFilledTwice <&&> rowsComplete <&&> columnsComplete <&&> squaresComplete <&&> columnNoRepetitions <&&> rowsNoRepetition <&&> sudokuProblem
