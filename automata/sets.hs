@@ -33,6 +33,3 @@ m `element` (n : ns)
 
 equal :: SetList -> SetList -> Bool
 ms `equal` ns = ms == ns
-
-data SetTree = Nil | Node SetTree Int SetTree
-  deriving (Show)
