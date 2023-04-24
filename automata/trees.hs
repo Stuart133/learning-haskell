@@ -71,6 +71,8 @@ data Prop
   | Not Prop
   | Prop :||: Prop
   | Prop :&&: Prop
+  | Prop :->: Prop
+  | Prop :<->: Prop
   deriving (Eq)
 
 instance Show Prop where
@@ -80,6 +82,8 @@ instance Show Prop where
   show (Not p) = "(not " ++ show p ++ ")"
   show (p :||: q) = "(" ++ show p ++ " || " ++ show q ++ ")"
   show (p :&&: q) = "(" ++ show p ++ " && " ++ show q ++ ")"
+  show (p :->: q) = "(" ++ show p ++ " -> " ++ show q ++ ")"
+  show (p :<->: q) = "(" ++ show p ++ " <-> " ++ show q ++ ")"
 
 evalProp :: Valn -> Prop -> Bool
 evalProp vn (Var x) = vn x
@@ -88,11 +92,15 @@ evalProp vn T = True
 evalProp vn (Not p) = not (evalProp vn p)
 evalProp vn (p :||: q) = evalProp vn p || evalProp vn q
 evalProp vn (p :&&: q) = evalProp vn p && evalProp vn q
+evalProp vn (p :->: q) = not (evalProp vn p) || evalProp vn q
+evalProp vn (p :<->: q) = evalProp vn p == evalProp vn q
 
 size :: Prop -> Int
 size (Not p) = 1 + size p
 size (p :||: q) = 1 + size p + size q
 size (p :&&: q) = 1 + size p + size q
+size (p :->: q) = 1 + size p + size q
+size (p :<->: q) = 1 + size p + size q
 size p = 1
 
 valn :: Valn
@@ -120,6 +128,8 @@ names T = []
 names (Not p) = names p
 names (p :||: q) = nub (names p ++ names q)
 names (p :&&: q) = nub (names p ++ names q)
+names (p :->: q) = nub (names p ++ names q)
+names (p :<->: q) = nub (names p ++ names q)
 
 subExpressions :: Prop -> [Prop]
 subExpressions (Not p) = Not p : subExpressions p
