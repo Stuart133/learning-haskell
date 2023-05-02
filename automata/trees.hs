@@ -2,6 +2,7 @@ module Trees where
 
 import DPLL (Clause (Or), Literal (N, P))
 import Data.List (nub, sortOn)
+import Debug.Trace
 
 data Exp
   = Lit Int
@@ -121,7 +122,11 @@ stageThree :: Prop -> Prop
 stageThree (Var x) = Var x
 stageThree F = F
 stageThree T = T
-stageThree (Not p) = Not (stageThree p)
+stageThree (Not p) = Not p
+stageThree (p :&&: q)
+  | p == T = stageThree q
+  | q == T = stageThree p
+  | otherwise = stageThree p :&&: stageThree q
 stageThree (p :||: (q :&&: r)) = stageThree (stageThree (stageThree p :||: stageThree q) :&&: stageThree (stageThree p :||: stageThree r))
 stageThree ((p :&&: q) :||: r) = stageThree (stageThree (stageThree p :||: stageThree r) :&&: stageThree (stageThree q :||: stageThree r))
 stageThree (p :||: q)
@@ -130,10 +135,6 @@ stageThree (p :||: q)
   | p == T = T
   | q == T = T
   | otherwise = stageThree p :||: stageThree q
-stageThree (p :&&: q)
-  | p == T = stageThree q
-  | q == T = stageThree p
-  | otherwise = stageThree p :&&: stageThree q
 
 toCNF :: Prop -> Prop
 toCNF p = stageThree (toNNF (stageOne p))
