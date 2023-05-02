@@ -1,7 +1,6 @@
 module DPLL where
 
 import Data.List (delete, intercalate, sortOn)
-import Trees (a)
 
 data Var = A | B | C | D | E | F | G | H
   deriving (Eq, Show)

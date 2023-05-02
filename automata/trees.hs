@@ -1,5 +1,6 @@
 module Trees where
 
+import DPLL (Clause (Or), Literal (N, P))
 import Data.List (nub, sortOn)
 
 data Exp
@@ -95,6 +96,47 @@ evalProp vn (p :&&: q) = evalProp vn p && evalProp vn q
 evalProp vn (p :->: q) = not (evalProp vn p) || evalProp vn q
 evalProp vn (p :<->: q) = evalProp vn p == evalProp vn q
 
+stageOne :: Prop -> Prop
+stageOne (Var x) = Var x
+stageOne F = F
+stageOne T = T
+stageOne (Not p) = Not (stageOne p)
+stageOne (p :||: q) = stageOne p :||: stageOne q
+stageOne (p :&&: q) = stageOne p :&&: stageOne q
+stageOne (p :->: q) = Not (stageOne p) :||: stageOne q
+stageOne (p :<->: q) = stageOne (p :->: q) :&&: stageOne (q :->: p)
+
+toNNF :: Prop -> Prop
+toNNF (Var x) = Var x
+toNNF F = F
+toNNF T = T
+toNNF (p :||: q) = toNNF p :||: toNNF q
+toNNF (p :&&: q) = toNNF p :&&: toNNF q
+toNNF (Not (Not p)) = toNNF p
+toNNF (Not (p :&&: q)) = Not (toNNF p) :||: toNNF (toNNF q)
+toNNF (Not (p :||: q)) = Not (toNNF p) :&&: toNNF (toNNF q)
+toNNF (Not p) = Not p
+
+stageThree :: Prop -> Prop
+stageThree (Var x) = Var x
+stageThree F = F
+stageThree T = T
+stageThree (Not p) = Not (stageThree p)
+stageThree (p :||: (q :&&: r)) = (p :||: q) :&&: (p :||: r)
+stageThree ((p :&&: q) :||: r) = (p :||: r) :&&: (q :||: r)
+stageThree (p :||: q) = stageThree p :||: stageThree q
+stageThree (p :&&: q) = stageThree p :&&: stageThree q
+
+toCNF :: Prop -> Prop
+toCNF p = stageThree (toNNF (stageOne p))
+
+-- toClause :: Prop -> Clause Name -> Clause Name
+-- toClause (Var x) c = P x : c
+-- toClause (Not (Var x)) c = N x : c
+-- toClause F c = Or c
+-- toClause T c = Or c
+-- toClause (p :||: q) c = Or ((toClause p c) ++ toClause q ++ c)
+
 size :: Prop -> Int
 size (Not p) = 1 + size p
 size (p :||: q) = 1 + size p + size q
@@ -154,6 +196,12 @@ p0 = Var "a" :&&: Not (Var "a")
 p1 = (Var "a" :&&: Var "b") :||: (Not (Var "a") :&&: Not (Var "b"))
 
 p2 = (Var "a" :&&: Not (Var "b") :&&: (Var "c" :||: (Var "d" :&&: Var "b")) :||: (Not (Var "b") :&&: Not (Var "a"))) :&&: Var "c"
+
+p3 = Var "r" :<->: (Var "s" :->: Var "t")
+
+p4 = Var "r" :<->: (Var "s" :<->: Var "t")
+
+p5 = Var "r" :<->: (Var "s" :&&: Var "t")
 
 data Mobile
   = Mobile `Rod` Mobile
