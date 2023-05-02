@@ -103,7 +103,7 @@ stageOne T = T
 stageOne (Not p) = Not (stageOne p)
 stageOne (p :||: q) = stageOne p :||: stageOne q
 stageOne (p :&&: q) = stageOne p :&&: stageOne q
-stageOne (p :->: q) = Not (stageOne p) :||: stageOne q
+stageOne (p :->: q) = stageOne (Not p) :||: stageOne q
 stageOne (p :<->: q) = stageOne (p :->: q) :&&: stageOne (q :->: p)
 
 toNNF :: Prop -> Prop
@@ -113,8 +113,8 @@ toNNF T = T
 toNNF (p :||: q) = toNNF p :||: toNNF q
 toNNF (p :&&: q) = toNNF p :&&: toNNF q
 toNNF (Not (Not p)) = toNNF p
-toNNF (Not (p :&&: q)) = Not (toNNF p) :||: toNNF (toNNF q)
-toNNF (Not (p :||: q)) = Not (toNNF p) :&&: toNNF (toNNF q)
+toNNF (Not (p :&&: q)) = toNNF (Not p) :||: toNNF (Not q)
+toNNF (Not (p :||: q)) = toNNF (Not p) :&&: toNNF (Not q)
 toNNF (Not p) = Not p
 
 stageThree :: Prop -> Prop
@@ -122,10 +122,18 @@ stageThree (Var x) = Var x
 stageThree F = F
 stageThree T = T
 stageThree (Not p) = Not (stageThree p)
-stageThree (p :||: (q :&&: r)) = (p :||: q) :&&: (p :||: r)
-stageThree ((p :&&: q) :||: r) = (p :||: r) :&&: (q :||: r)
-stageThree (p :||: q) = stageThree p :||: stageThree q
-stageThree (p :&&: q) = stageThree p :&&: stageThree q
+stageThree (p :||: (q :&&: r)) = stageThree (stageThree (stageThree p :||: stageThree q) :&&: stageThree (stageThree p :||: stageThree r))
+stageThree ((p :&&: q) :||: r) = stageThree (stageThree (stageThree p :||: stageThree r) :&&: stageThree (stageThree q :||: stageThree r))
+stageThree (p :||: q)
+  | p == Not q = T
+  | Not p == q = T
+  | p == T = T
+  | q == T = T
+  | otherwise = stageThree p :||: stageThree q
+stageThree (p :&&: q)
+  | p == T = stageThree q
+  | q == T = stageThree p
+  | otherwise = stageThree p :&&: stageThree q
 
 toCNF :: Prop -> Prop
 toCNF p = stageThree (toNNF (stageOne p))
@@ -202,6 +210,8 @@ p3 = Var "r" :<->: (Var "s" :->: Var "t")
 p4 = Var "r" :<->: (Var "s" :<->: Var "t")
 
 p5 = Var "r" :<->: (Var "s" :&&: Var "t")
+
+p6 = (Var "s" :||: Var "t") :&&: (Not (Var "t") :||: Not (Var "s")) :||: Var "r"
 
 data Mobile
   = Mobile `Rod` Mobile
